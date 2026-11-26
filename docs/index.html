@@ -279,6 +279,22 @@ const CT0 = 27, CT1 = 134, CTW = 512, CTMID = 264, AM = -1.0, CM = 0.00125, DM =
   function loadJaw(k) { if (k >= JAW_LAST || jawM[k] !== null) return; jawM[k] = false;
     const m = new Image(); m.onload = () => { jawM[k] = m; if (k === S.i) schedule(); }; m.src = 'jaw/' + String(k + 1).padStart(3, '0') + '.png'; }
   const oc = document.createElement('canvas'); oc.width = IW; oc.height = IH; const octx = oc.getContext('2d');
+  // load + decode every background mask up front, so the background toggle applies to the whole stack at once
+  let allMasks = null;
+  function loadAllMasks() {
+    if (allMasks) return allMasks;
+    allMasks = Promise.all(Array.from({ length: N }, (_, k) => {
+      if (masks[k]) return Promise.resolve();
+      const m = new Image(); m.src = 'masks/' + String(k + 1).padStart(3, '0') + '.png';
+      return m.decode().then(() => { masks[k] = m; }).catch(() => {});
+    }));
+    return allMasks;
+  }
+  function toggleBg() {
+    if (!S.bg) { toggle('bg', 'bgb'); return; }            // turning the background back on: instant
+    const st = $('loading'), b = $('bgb'); st.style.display = ''; st.textContent = 'Removing background from every slice…'; b.disabled = true;
+    loadAllMasks().then(() => { st.style.display = 'none'; b.disabled = false; if (S.bg) toggle('bg', 'bgb'); });
+  }
   function loadMask(k) { if (masks[k] !== null) return; masks[k] = false;
     const m = new Image(); m.onload = () => { masks[k] = m; if (k === S.i) schedule(); }; m.src = 'masks/' + String(k + 1).padStart(3, '0') + '.png'; }
   const paths = OUTLINES.map(d => d ? new Path2D(d) : null);
@@ -670,7 +686,7 @@ const CT0 = 27, CT1 = 134, CTW = 512, CTMID = 264, AM = -1.0, CM = 0.00125, DM =
   gctl();
   $('gN').oninput = e => { if (!S.ghosts) { S.ghosts = true; $('nbr').classList.add('on'); gctl(); } S.gN = +e.target.value; $('gNv').textContent = '±' + S.gN; draw(); };
   $('gA').onclick = () => toggle('gA', 'gA'); $('gP').onclick = () => toggle('gP', 'gP');
-  $('bgb').onclick = () => toggle('bg', 'bgb');
+  $('bgb').onclick = toggleBg;
   
   $('flip').onclick = () => toggle('flipH', 'flip');
   $('rot').onclick = () => { S.rot = (S.rot + 90) % 360; draw(); };
@@ -702,7 +718,7 @@ const CT0 = 27, CT1 = 134, CTW = 512, CTMID = 264, AM = -1.0, CM = 0.00125, DM =
     else if (k === 'x') { S.mark = null; draw(); }
     else if (k === '[') nudgeLink(-1); else if (k === ']') nudgeLink(1);
     else if (k === 'v') toggle('overlay', 'ovl'); else if (k === 'n') { toggle('ghosts', 'nbr'); gctl(); }
-    else if (k === 'b') toggle('bg', 'bgb'); else if (k === 'h') toggle('flipH', 'flip');
+    else if (k === 'b') toggleBg(); else if (k === 'h') toggle('flipH', 'flip');
     else if (k === 'o') { S.rot = (S.rot + 90) % 360; draw(); } else if (k === 'r') resetView();
     else if (k === 'Escape') { if ($('lb').classList.contains('show')) { $('lb').classList.remove('show'); e.preventDefault(); return; } $('about').classList.remove('show'); closeEditor(); if (S.mark && !$('help').classList.contains('show') && !$('io').classList.contains('show')) { S.mark = null; schedule(); } $('help').classList.remove('show'); $('io').classList.remove('show'); }
     else return;

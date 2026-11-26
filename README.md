@@ -27,7 +27,7 @@ Press **?** in the viewer for all keyboard shortcuts. Add `#embed` to the URL to
 
 ## Viewing it
 
-- **Online:** the site lives in `docs/`. Turn on GitHub Pages for this repository (Settings → Pages → Deploy from a branch → `main` / `docs`).
+- **Online:** https://matthewbreen.github.io/giant-skull/ (GitHub Pages; the root page forwards to the viewer in `docs/`).
 - **Locally:** open `docs/index.html` in a browser. If the browser blocks local files, run `python3 -m http.server` inside `docs/` and open http://localhost:8000.
 
 ## Repository layout
